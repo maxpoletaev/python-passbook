@@ -40,17 +40,19 @@ class Pass:
     def _make_signature(self):
         self.signature_file = '/tmp/signature'
 
-        params = ['openssl', 'smime',
-                '-binary', '-sign',
-                '-certfile', self.wwdr,
-                '-signer', self.cert,
-                '-inkey', self.key,
-                '-in', self.manifest_file,
-                '-out', self.signature_file,
-                '-outform', 'DER',
-                '-passin', 'pass:' + self.password]
+        command = [
+            'openssl', 'smime',
+            '-binary', '-sign',
+            '-certfile', self.wwdr,
+            '-signer', self.cert,
+            '-inkey', self.key,
+            '-in', self.manifest_file,
+            '-out', self.signature_file,
+            '-outform', 'DER',
+            '-passin', 'pass:' + self.password,
+        ]
 
-        call(params, stdout=sys.stdout, stderr=sys.stderr)
+        self._cmd(command)
 
     def _make_pass(self):
         self.pass_file = '/tmp/pass'
@@ -58,15 +60,23 @@ class Pass:
         with open(self.pass_file, 'w') as f:
             f.write(json.dumps(self.data, indent=4))
 
+    def _cmd(self, params):
+        try:
+            # Hotfix for this issue:
+            # https://github.com/GrahamDumpleton/mod_wsgi/issues/85
+            call(params, stdout=sys.stdout, stderr=sys.stderr)
+        except AttributeError:
+            pass
+
     def check_signature(self, manifest=None, signature=None):
-        params = ['openssl', 'smime',
+        command = ['openssl', 'smime',
                 '-verify',
                 '-in', manifest,
                 '-content', signature,
                 '-inform', 'der',
                 '-noverify']
 
-        call(params, stdout=sys.stdout, stderr=sys.stderr)
+        self._cmd(command)
 
     def save(self, dest):
         with zipfile.ZipFile(dest, 'w', compression=zipfile.ZIP_DEFLATED) as zipped:
