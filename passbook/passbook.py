@@ -1,8 +1,4 @@
-from subprocess import call
 from hashlib import sha1
-from uuid import uuid4
-import tempfile
-
 import zipfile
 import shutil
 import json
@@ -60,21 +56,18 @@ class Pass:
         with open(self.pass_file, 'w') as f:
             f.write(json.dumps(self.data, indent=4))
 
-    def _cmd(self, params):
-        try:
-            # Hotfix for this issue:
-            # https://github.com/GrahamDumpleton/mod_wsgi/issues/85
-            call(params, stdout=sys.stdout, stderr=sys.stderr)
-        except AttributeError:
-            pass
+    def _cmd(self, command):
+        os.system(' '.join(command))
 
     def check_signature(self, manifest=None, signature=None):
-        command = ['openssl', 'smime',
-                '-verify',
-                '-in', manifest,
-                '-content', signature,
-                '-inform', 'der',
-                '-noverify']
+        command = [
+            'openssl', 'smime',
+            '-verify',
+            '-in', manifest,
+            '-content', signature,
+            '-inform', 'der',
+            '-noverify',
+        ]
 
         self._cmd(command)
 
